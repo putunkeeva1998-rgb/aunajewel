@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://mapgl.2gis.com/api/js/v1"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -25,88 +25,149 @@
     </script>
 
     <style>
-        :root { 
-            --accent: #1a1a1a; 
-            --bg: #ffffff; 
-            --card-bg: #f9f9f9;
-            --dark: #000000; 
-            --gray: #e0e0e0; 
-        }
-
+        :root { --accent: #1a1a1a; --bg: #ffffff; --card-bg: #f9f9f9; --gray: #eeeeee; --pink: #fdf0f3; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; background: var(--bg); font-family: 'Montserrat', sans-serif; color: var(--dark); }
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: #000; padding-bottom: 80px; }
+        
+        .header { padding: 15px; text-align: center; border-bottom: 1px solid var(--gray); position: sticky; top: 0; background: #fff; z-index: 1000; }
+        .header h1 { margin: 0; font-size: 14px; letter-spacing: 3px; text-transform: uppercase; font-weight: 800; }
 
-        .header { padding: 15px; text-align: center; border-bottom: 1px solid var(--gray); position: sticky; top: 0; background: #fff; z-index: 100; }
-        .header h1 { margin: 0; font-size: 16px; letter-spacing: 3px; text-transform: uppercase; }
-
-        /* Сетка каталога */
-        .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; padding-bottom: 100px; }
+        /* Каталог */
+        .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; }
         .card { background: var(--card-bg); border-radius: 15px; overflow: hidden; position: relative; }
         .card img { width: 100%; height: 200px; object-fit: cover; }
         
         /* Таб-бар */
         .tab-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: #fff; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--gray); z-index: 1000; }
-        .tab-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #888; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #999; }
         .tab-item.active { color: var(--accent); }
-        .tab-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+        .tab-item svg { width: 22px; height: 22px; margin-bottom: 4px; }
 
-        /* Админка */
-        .admin-box { background: #f0f0f0; padding: 15px; border-radius: 15px; margin-top: 20px; border: 1px dashed #000; }
-        .admin-input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ccc; font-family: inherit; }
-        .btn-black { background: #000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; cursor: pointer; }
-        .manage-item { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 10px; border-radius: 10px; margin-top: 8px; }
-
-        /* Иконка сердца */
-        .fav-btn { position: absolute; top: 10px; right: 10px; color: rgba(255,255,255,0.8); font-size: 20px; }
-        .fav-btn.active { color: #ff4757; }
+        /* Карточка товара (внутренняя) */
+        .product-detail { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 2000; overflow-y: auto; padding-bottom: 50px; }
+        .size-btn { border: 1px solid #ddd; padding: 10px 15px; border-radius: 10px; background: #fff; font-weight: 600; }
+        .size-btn.active { background: #000; color: #fff; border-color: #000; }
+        
+        /* Админка и формы */
+        .admin-input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit; }
+        .btn-black { background: #000; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: 700; }
+        #map { width: 100%; height: 250px; border-radius: 15px; margin-top: 15px; }
+        
+        .burger { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 3000; padding: 30px; }
+        [v-cloak] { display: none; }
     </style>
 </head>
 <body>
 
-<div id="app">
+<div id="app" v-cloak>
     <div class="header">
+        <div @click="ui.burger = true; vibrate()" style="position: absolute; left: 15px; font-size: 20px;">☰</div>
         <h1>AUNA jewel</h1>
     </div>
 
-    <div v-if="activeTab === 'catalog'" class="catalog-grid">
-        <div v-for="p in products" :key="p.id" class="card" v-if="!p.hidden" @click="openProduct(p)">
-            <img :src="p.images[0]">
-            <div class="fav-btn" :class="{active: isFav(p)}" @click.stop="toggleFav(p)">❤</div>
-            <div style="padding: 10px;">
-                <div style="font-size: 13px; font-weight: 600;">{{p.name}}</div>
-                <div style="font-weight: 800; margin-top: 5px;">{{p.price}} ₽</div>
+    <div v-if="ui.burger" class="burger">
+        <div @click="ui.burger = false; vibrate()" style="font-size: 30px; margin-bottom: 30px;">✕</div>
+        <div @click="tgAlert('О НАС', 'AUNA jewel — изысканность в каждой детали.')" style="padding: 15px 0; border-bottom: 1px solid #eee;">О НАС</div>
+        <div @click="tgAlert('ДОСТАВКА', 'СДЭК, Почта РФ, 5post')" style="padding: 15px 0; border-bottom: 1px solid #eee;">ДОСТАВКА</div>
+        <div @click="tgAlert('ВОЗВРАТ', 'Возврат в течение 14 дней')" style="padding: 15px 0;">ВОЗВРАТ</div>
+    </div>
+
+    <div v-if="activeTab === 'catalog'">
+        <div style="display: flex; gap: 10px; padding: 10px; overflow-x: auto;">
+            <button v-for="c in ['Все', 'Серьги', 'Цепочки']" @click="ui.cat = c; vibrate()" :class="['size-btn', ui.cat === c ? 'active' : '']" style="padding: 5px 15px; font-size: 12px;">{{c}}</button>
+        </div>
+        <div class="catalog-grid">
+            <div v-for="p in filteredProducts" :key="p.id" class="card" v-if="!p.hidden" @click="openProduct(p)">
+                <img :src="p.images[0]">
+                <div @click.stop="toggleFav(p)" style="position: absolute; top: 10px; right: 10px; color: #fff; font-size: 20px;" :style="{color: isFav(p) ? '#ff4757' : 'rgba(255,255,255,0.7)'}">❤</div>
+                <div style="padding: 10px;">
+                    <div style="font-size: 12px; color: #666;">{{p.name}}</div>
+                    <div style="font-weight: 700;">{{p.price}} ₽</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div v-if="activeTab === 'profile'" style="padding: 15px; padding-bottom: 100px;">
+    <div v-if="activeTab === 'fav'" style="padding: 10px;">
+        <h2>Избранное</h2>
+        <div class="catalog-grid">
+            <div v-for="p in favs" :key="p.id" class="card" @click="openProduct(p)">
+                <img :src="p.images[0]">
+                <div style="padding: 10px;">
+                    <div style="font-size: 12px;">{{p.name}}</div>
+                    <div style="font-weight: 700;">{{p.price}} ₽</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div v-show="activeTab === 'cart'" style="padding: 15px;">
+        <h2>Корзина</h2>
+        <div v-if="cart.length === 0">Корзина пуста</div>
+        <div v-else>
+            <div v-for="(item, idx) in cart" style="display: flex; gap: 10px; margin-bottom: 10px; background: #f9f9f9; padding: 10px; border-radius: 10px;">
+                <img :src="item.images[0]" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;">
+                <div style="flex: 1;">
+                    <div style="font-size: 12px; font-weight: 600;">{{item.name}} ({{item.selSize}})</div>
+                    <div style="font-weight: 700;">{{item.price}} ₽</div>
+                </div>
+                <div @click="cart.splice(idx, 1); vibrate()" style="color: #ff4757;">✕</div>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <input v-model="form.phone" placeholder="Телефон (10-11 цифр)" class="admin-input" type="tel">
+                <p>Доставка:</p>
+                <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                    <button v-for="m in ['СДЭК', 'Почта', '5post']" @click="form.method = m; vibrate()" :class="['size-btn', form.method === m ? 'active' : '']" style="flex: 1; font-size: 12px;">{{m}}</button>
+                </div>
+                <div id="map"></div>
+                <button @click="checkout" class="btn-black" style="margin-top: 15px;">ОФОРМИТЬ ЗАКАЗ</button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="activeTab === 'profile'" style="padding: 15px;">
         <div style="text-align: center; margin-bottom: 20px;">
-            <img :src="user.photo" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px;">
-            <h2 style="margin: 0;">{{user.first_name}}</h2>
-            <button @click="contactSupport" class="btn-black" style="margin-top: 15px; background: #444;">Написать в поддержку</button>
+            <img :src="user.photo" style="width: 80px; border-radius: 50%;">
+            <h3>{{user.first_name}}</h3>
+            <button @click="tg.openTelegramLink('https://t.me/opttania'); vibrate()" class="btn-black" style="background: #444; margin-bottom: 10px;">Поддержка</button>
         </div>
 
-        <div v-if="isAdmin" class="admin-box">
-            <h3 style="margin-top: 0;">Админ-панель</h3>
-            <input v-model="newItem.name" placeholder="Название товара" class="admin-input">
+        <div v-if="isAdmin" style="background: var(--pink); padding: 15px; border-radius: 20px; border: 1px dashed #000;">
+            <h3>Админ-панель</h3>
+            <input v-model="newItem.name" placeholder="Название" class="admin-input">
             <input v-model="newItem.price" placeholder="Цена" class="admin-input">
             <textarea v-model="newItem.desc" placeholder="Описание" class="admin-input"></textarea>
-            <input type="file" @change="uploadPhoto" style="margin-bottom: 15px;">
+            <input type="file" @change="uploadImgBB" style="margin-bottom: 15px;">
             <button @click="saveProduct" class="btn-black">ДОБАВИТЬ ТОВАР</button>
 
-            <h4 style="margin-top: 25px;">Управление витриной:</h4>
-            <div v-for="p in products" :key="p.id" class="manage-item">
-                <span style="font-size: 12px; font-weight: 600;">{{p.name}}</span>
-                <button @click="toggleHide(p)" 
-                        :style="{background: p.hidden ? '#ff4757' : '#2ed573', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '5px'}">
-                    {{ p.hidden ? 'ПОКАЗАТЬ' : 'СКРЫТЬ' }}
-                </button>
+            <h4 style="margin-top: 20px;">Скрыть/Показать:</h4>
+            <div v-for="p in products" :key="p.id" style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 10px; border-radius: 10px; margin-bottom: 5px;">
+                <span style="font-size: 12px;">{{p.name}}</span>
+                <button @click="toggleHide(p); vibrate()" :style="{background: p.hidden ? '#ff4757' : '#2ed573'}" style="color: #fff; border: none; padding: 5px 10px; border-radius: 5px;">{{p.hidden ? 'Показать' : 'Скрыть'}}</button>
             </div>
+        </div>
+    </div>
+
+    <div v-if="selectedP" class="product-detail">
+        <div @click="selectedP = null; vibrate()" style="padding: 20px; font-size: 25px;">✕</div>
+        <div style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; height: 350px;">
+            <img v-for="img in selectedP.images" :src="img" style="min-width: 100%; object-fit: cover; scroll-snap-align: start;">
+        </div>
+        <div style="padding: 20px;">
+            <h2 style="margin: 0;">{{selectedP.name}}</h2>
+            <div style="font-size: 20px; font-weight: 800; margin: 10px 0;">{{selectedP.price}} ₽</div>
+            <p style="color: #666;">{{selectedP.desc}}</p>
+            <p>Выберите размер:</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button v-for="s in selectedP.sizes" @click="selSize = s; vibrate()" :class="['size-btn', selSize === s ? 'active' : '']">{{s}}</button>
+            </div>
+            <button @click="addToCart(selectedP)" class="btn-black">ДОБАВИТЬ В КОРЗИНУ</button>
         </div>
     </div>
 
     <nav class="tab-bar">
-        <div v-for="t in tabs" :key="t.id" @click="activeTab = t.id; vibrate()" :class="['tab-item', activeTab === t.id ? 'active' : '']">
+        <div v-for="t in tabs" @click="setTab(t.id)" :class="['tab-item', activeTab === t.id ? 'active' : '']">
             <svg viewBox="0 0 24 24" fill="currentColor" v-html="t.icon"></svg>
             <span>{{t.label}}</span>
         </div>
@@ -115,19 +176,20 @@
 
 <script>
     const tg = window.Telegram.WebApp;
+    const { createApp } = Vue;
 
-    Vue.createApp({
+    createApp({
         data() {
             return {
                 activeTab: 'catalog',
-                isAdmin: false,
-                adminId: 387881523, // ВАШ ID
+                isAdmin: false, adminId: 5886656847,
                 user: { first_name: 'Гость', photo: '' },
-                products: [
-                {id: 1, name: 'Комплекты', price: 4500, category: 'Комплекты', images: ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '6.jpg'], sizes: ['40см', '45см'], hidden: false},
-                {id: 2, name: 'Цепь "Gold"', price: 2500, category: 'Цепочки', images: ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '6.jpg'], sizes: ['40см', '45см'], hidden: false}
-            ],
+                products: [],
+                cart: JSON.parse(localStorage.getItem('auna_cart') || '[]'),
                 favs: JSON.parse(localStorage.getItem('auna_favs') || '[]'),
+                selectedP: null, selSize: '',
+                ui: { burger: false, cat: 'Все' },
+                form: { phone: '', method: 'СДЭК', name: '' },
                 newItem: { name: '', price: '', desc: '', images: [], category: 'Серьги' },
                 tabs: [
                     { id: 'catalog', label: 'Каталог', icon: '<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>' },
@@ -137,64 +199,88 @@
                 ]
             }
         },
+        computed: {
+            filteredProducts() {
+                return this.ui.cat === 'Все' ? this.products : this.products.filter(p => p.category === this.ui.cat);
+            }
+        },
         methods: {
             vibrate() { tg.HapticFeedback.impactOccurred('medium'); },
+            setTab(id) { this.vibrate(); this.activeTab = id; if(id === 'cart') this.initMap(); },
+            tgAlert(title, message) { tg.showPopup({ title, message }); },
             
-            async uploadPhoto(e) {
+            async uploadImgBB(e) {
                 const file = e.target.files[0];
-                const formData = new FormData();
-                formData.append('image', file);
-                
-                const res = await fetch('https://api.imgbb.com/1/upload?key=839e62907e9a52f0159461b7771bcb2f', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await res.json();
-                this.newItem.images.push(result.data.url);
-                tg.showAlert('Фото загружено в ImgBB!');
+                const form = new FormData();
+                form.append('image', file);
+                const res = await fetch('https://api.imgbb.com/1/upload?key=839e62907e9a52f0159461b7771bcb2f', { method: 'POST', body: form });
+                const data = await res.json();
+                this.newItem.images.push(data.data.url);
+                tg.showAlert('Фото загружено!');
             },
 
             async saveProduct() {
-                if(!this.newItem.name || this.newItem.images.length === 0) return;
                 await window.fbMethods.addDoc(window.fbMethods.collection(window.db, "products"), {
-                    ...this.newItem,
-                    hidden: false,
-                    sizes: ['16', '17', '18'],
-                    createdAt: Date.now()
+                    ...this.newItem, hidden: false, createdAt: Date.now(), sizes: ['16', '17', '18']
                 });
-                tg.showAlert('Товар добавлен!');
+                tg.showAlert('Добавлено!');
                 this.newItem = { name: '', price: '', desc: '', images: [], category: 'Серьги' };
             },
 
             async toggleHide(p) {
-                this.vibrate();
-                const productRef = window.fbMethods.doc(window.db, "products", p.id);
-                await window.fbMethods.updateDoc(productRef, { hidden: !p.hidden });
+                await window.fbMethods.updateDoc(window.fbMethods.doc(window.db, "products", p.id), { hidden: !p.hidden });
             },
 
+            openProduct(p) { this.vibrate(); this.selectedP = p; this.selSize = p.sizes[0]; },
             isFav(p) { return this.favs.some(f => f.id === p.id); },
             toggleFav(p) {
                 this.vibrate();
                 const idx = this.favs.findIndex(f => f.id === p.id);
-                if(idx > -1) this.favs.splice(idx, 1);
-                else this.favs.push(p);
+                if(idx > -1) this.favs.splice(idx, 1); else this.favs.push(p);
                 localStorage.setItem('auna_favs', JSON.stringify(this.favs));
             },
-            contactSupport() { tg.openTelegramLink('https://t.me/opttania'); }
+
+            addToCart(p) {
+                this.vibrate();
+                this.cart.push({ ...p, selSize: this.selSize });
+                localStorage.setItem('auna_cart', JSON.stringify(this.cart));
+                tg.showAlert('В корзине!');
+                this.selectedP = null;
+            },
+
+            checkout() {
+                const phone = this.form.phone.replace(/\D/g, '');
+                if(phone.length < 10 || phone.length > 11) return tg.showAlert('Ошибка: номер должен быть 10-11 цифр!');
+                
+                const order = `ЗАКАЗ: ${this.cart.map(i => i.name + ' (' + i.selSize + ')').join(', ')}\nИТОГО: ${this.cart.reduce((s,i)=>s+Number(i.price),0)} р.\nТЕЛ: ${this.form.phone}\nДОСТАВКА: ${this.form.method}`;
+                tg.sendData(order);
+                this.cart = [];
+                localStorage.removeItem('auna_cart');
+                tg.close();
+            },
+
+            initMap() {
+                setTimeout(() => {
+                    const map = new mapgl.Map('map', { center: [37.61, 55.75], zoom: 12, key: 'cab82c94-e619-42eb-9814-3361712feaf0' });
+                    navigator.geolocation.getCurrentPosition(pos => {
+                        map.setCenter([pos.coords.longitude, pos.coords.latitude]);
+                    });
+                }, 100);
+            }
         },
         mounted() {
-            tg.ready();
-            tg.expand();
+            tg.ready(); tg.expand();
             if(tg.initDataUnsafe?.user) {
-                this.user = { first_name: tg.initDataUnsafe.user.first_name, photo: tg.initDataUnsafe.user.photo_url };
-                if(Number(tg.initDataUnsafe.user.id) === this.adminId) this.isAdmin = true;
+                const u = tg.initDataUnsafe.user;
+                this.user = { first_name: u.first_name, photo: u.photo_url };
+                this.form.name = u.first_name;
+                if(Number(u.id) === this.adminId) this.isAdmin = true;
             }
-
-            // Загрузка товаров из Firebase
+            // Подгрузка товаров
             setTimeout(() => {
                 const q = window.fbMethods.query(window.fbMethods.collection(window.db, "products"), window.fbMethods.orderBy("createdAt", "desc"));
-                window.fbMethods.onSnapshot(q, (snapshot) => {
-                    this.products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                window.fbMethods.onSnapshot(q, (sn) => {
+                    this.products = sn.docs.map(d => ({ id: d.id, ...d.data() }));
                 });
             }, 1000);
         }
