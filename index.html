@@ -8,209 +8,211 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://mapgl.2gis.com/api/js/v1"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --accent: #000000;
-            --bg: #ffffff;
-            --card-bg: #f9f9f9;
-            --text-main: #1a1a1a;
-            --text-muted: #8e8e93;
-            --error: #ff3b30;
-            --success: #34c759;
-            --border: #efefef;
-        }
-
+        :root { --bg: #ffffff; --text: #000000; --muted: #8e8e93; --border: #f2f2f2; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-        
-        body {
-            margin: 0;
-            font-family: 'Montserrat', sans-serif;
-            background: var(--bg);
-            color: var(--text-main);
-            padding-bottom: 100px;
-            user-select: none;
-            overflow-x: hidden;
-        }
-
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--text); padding-bottom: 90px; overflow-x: hidden; }
         [v-cloak] { display: none; }
 
         /* HEADER */
-        header {
-            position: sticky; top: 0;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            padding: 15px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border);
-        }
+        header { position: sticky; top: 0; background: #fff; z-index: 100; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .logo { font-weight: 800; font-size: 16px; letter-spacing: 4px; text-transform: uppercase; }
 
-        .logo { font-weight: 800; font-size: 16px; letter-spacing: 4px; text-transform: uppercase; margin: 0; }
+        /* BURGER PANEL */
+        .burger-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 2000; transform: translateX(-100%); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); padding: 40px 25px; }
+        .burger-panel.active { transform: translateX(0); }
+        .nav-link { font-size: 24px; font-weight: 800; margin-bottom: 25px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
 
-        /* BURGER NAVIGATION (DEEP DIVE) */
-        .burger-nav {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; z-index: 2000; transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            transform: translateX(-100%);
-        }
-        .burger-nav.active { transform: translateX(0); }
-        .nav-content { padding: 40px 25px; height: 100%; display: flex; flex-direction: column; }
-        .nav-header { display: flex; align-items: center; gap: 15px; margin-bottom: 40px; }
-        .nav-back-btn { font-size: 14px; font-weight: 800; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .nav-item-link { font-size: 24px; font-weight: 800; margin-bottom: 25px; text-transform: uppercase; cursor: pointer; display: block; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
-
-        /* CATALOG FIX */
-        .catalog { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 15px; }
-        .product-card { background: var(--card-bg); border-radius: 15px; overflow: hidden; position: relative; transition: transform 0.2s; }
-        .product-card:active { transform: scale(0.98); }
-        
-        .img-wrap { width: 100%; aspect-ratio: 1/1.2; background: #f5f5f5; position: relative; overflow: hidden; }
-        .img-wrap img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s ease; }
+        /* GRID & CARDS */
+        .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; }
+        .card { background: #fff; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid var(--border); }
+        .img-wrap { width: 100%; aspect-ratio: 1/1.2; background: #f9f9f9; position: relative; overflow: hidden; }
+        .img-wrap img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: 0.5s; }
         .img-wrap img.loaded { opacity: 1; }
-
-        /* MODAL & OTHERS */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 3000; overflow-y: auto; }
-        .slider-container { width: 100%; height: 60vh; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; background: #eee; }
-        .slider-container img { min-width: 100%; object-fit: cover; scroll-snap-align: start; }
         
-        .btn-main { width: 100%; padding: 18px; background: black; color: white; border-radius: 15px; border: none; font-weight: 700; font-size: 15px; cursor: pointer; }
-        .btn-main:disabled { background: #ccc; }
+        .fav-btn { position: absolute; top: 8px; right: 8px; z-index: 10; }
 
-        /* NAV BAR */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 10px 30px; border-top: 1px solid var(--border); z-index: 1500; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--text-muted); font-size: 10px; font-weight: 600; }
-        .nav-item.active { color: var(--accent); }
-        .badge { position: absolute; top: -5px; right: -5px; background: var(--error); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
-
-        #map { width: 100%; height: 200px; border-radius: 15px; margin: 15px 0; border: 1px solid var(--border); }
+        /* PRODUCT PAGE OVERLAY */
+        .page-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 500; overflow-y: auto; }
+        .slider { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; height: 60vh; background: #eee; }
+        .slider img { min-width: 100%; object-fit: cover; scroll-snap-align: start; }
         
-        /* FORM STYLES */
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 5px; text-transform: uppercase; color: #666; }
-        .input-group input, .input-group textarea, .input-group select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; }
+        .size-btn { border: 1px solid #000; padding: 10px 15px; border-radius: 8px; font-weight: 700; font-size: 13px; min-width: 45px; text-align: center; }
+        .size-btn.active { background: #000; color: #fff; }
+
+        /* MAP & FORM */
+        #map-box { width: 100%; height: 250px; border-radius: 15px; margin: 15px 0; border: 1px solid var(--border); overflow: hidden; }
+        .input-ui { width: 100%; padding: 15px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; font-family: inherit; font-size: 14px; }
+        .delivery-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .del-item { padding: 12px; border: 1px solid #ddd; border-radius: 10px; text-align: center; font-size: 12px; font-weight: 700; }
+        .del-item.active { border-color: #000; background: #f9f9f9; }
+
+        /* TABS */
+        .tab-bar { position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0 25px; z-index: 1000; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; color: var(--muted); }
+        .tab-item.active { color: #000; }
+
+        .btn-black { background: #000; color: #fff; width: 100%; padding: 20px; border: none; border-radius: 15px; font-weight: 800; font-size: 14px; margin-top: 10px; }
+        .badge { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 10px; padding: 2px 6px; font-size: 9px; }
     </style>
 </head>
 <body>
 
 <div id="app" v-cloak>
     <header>
-        <div @click="menuOpen = true; vibrate()">
+        <div @click="menuOpen = true; haptic('light')">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </div>
-        <h1 class="logo">AUNA jewel</h1>
+        <div class="logo">AUNA jewel</div>
         <div style="width:24px"></div>
     </header>
 
-    <div class="burger-nav" :class="{active: menuOpen}">
-        <div class="nav-content">
-            <div class="nav-header">
-                <div v-if="!selectedSection" @click="menuOpen = false; vibrate()" class="nav-back-btn">✕ Закрыть</div>
-                <div v-else @click="selectedSection = null; vibrate()" class="nav-back-btn">← Назад</div>
-            </div>
-
-            <div v-if="!selectedSection">
-                <div class="nav-item-link" @click="selectedSection = 'about'; vibrate()">О бренде</div>
-                <div class="nav-item-link" @click="selectedSection = 'delivery_info'; vibrate()">Доставка</div>
-                <div class="nav-item-link" @click="selectedSection = 'return'; vibrate()">Возврат</div>
-                <div class="nav-item-link" @click="contactSupport(); vibrate()">Поддержка</div>
-            </div>
-
-            <div v-else>
-                <h2 style="font-weight: 800; text-transform: uppercase;">{{ infoData[selectedSection].title }}</h2>
-                <p style="line-height: 1.7; color: #444; white-space: pre-line;">{{ infoData[selectedSection].text }}</p>
-            </div>
+    <div class="burger-panel" :class="{active: menuOpen}">
+        <div style="text-align: right; font-weight: 800" @click="menuOpen = false; burgerSub = null">✕ ЗАКРЫТЬ</div>
+        <div v-if="!burgerSub" style="margin-top:40px">
+            <div class="nav-link" @click="burgerSub = 'about'; haptic('medium')">О нас</div>
+            <div class="nav-link" @click="burgerSub = 'delivery'; haptic('medium')">Доставка</div>
+            <div class="nav-link" @click="burgerSub = 'return'; haptic('medium')">Возврат</div>
+        </div>
+        <div v-else style="margin-top:40px">
+            <div @click="burgerSub = null; haptic('light')" style="font-weight: 800; margin-bottom: 20px">← НАЗАД</div>
+            <h2 style="font-weight: 800">{{ info[burgerSub].title }}</h2>
+            <p style="line-height: 1.7; color: #444">{{ info[burgerSub].text }}</p>
         </div>
     </div>
 
     <main>
         <div v-if="activeTab === 'catalog'">
-            <div style="display:flex; gap:10px; padding:15px 20px; overflow-x:auto; scrollbar-width:none;">
-                <div v-for="cat in ['Все', 'Серьги', 'Цепочки', 'Кольца']" 
-                     @click="currentCategory = cat; vibrate()" 
-                     :style="{background: currentCategory === cat ? '#000' : '#f0f0f0', color: currentCategory === cat ? '#fff' : '#000'}"
-                     style="padding:8px 18px; border-radius:20px; font-size:12px; font-weight:600; white-space:nowrap;">
-                    {{ cat }}
-                </div>
+            <div style="display:flex; gap:10px; padding:10px 15px; overflow-x:auto; scrollbar-width:none">
+                <div v-for="c in ['Все', 'Серьги', 'Цепочки', 'Кольца']" :key="c" 
+                     @click="curCat = c; haptic('light')"
+                     :style="{background: curCat === c ? '#000' : '#f2f2f2', color: curCat === c ? '#fff' : '#000'}"
+                     style="padding:8px 16px; border-radius:20px; font-size:12px; font-weight:700; white-space:nowrap">{{c}}</div>
             </div>
-
-            <div class="catalog">
-                <div v-for="p in filteredProducts" :key="p.id" class="product-card" @click="selectProduct(p); vibrate()">
+            <div class="catalog-grid">
+                <div v-for="p in filteredProducts" :key="p.id" class="card" @click="openProduct(p); haptic('medium')">
+                    <div class="fav-btn" @click.stop="toggleFav(p); haptic('medium')">
+                        <svg width="22" height="22" viewBox="0 0 24 24" :fill="isFav(p) ? 'red' : 'none'" :stroke="isFav(p) ? 'red' : 'black'" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    </div>
                     <div class="img-wrap">
-                        <img :src="p.safeImage" @load="p.loaded = true" :class="{loaded: p.loaded}">
+                        <img :src="p.safeImg" @load="p.loaded = true" :class="{loaded: p.loaded}">
                     </div>
-                    <div style="padding:10px;">
-                        <div style="font-size:12px; font-weight:600; height:32px; overflow:hidden;">{{p.name}}</div>
-                        <div style="font-weight:800; font-size:14px; margin-top:5px;">{{p.price}} ₽</div>
+                    <div style="padding:10px">
+                        <div style="font-size:11px; font-weight:600; height:32px; overflow:hidden">{{p.name}}</div>
+                        <div style="font-weight:800; font-size:14px; margin-top:5px">{{p.price}} ₽</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div v-if="activeTab === 'cart'" style="padding: 20px">
-            <h2 style="font-weight: 800;">Оформление</h2>
-            <div v-if="cart.length === 0" style="text-align:center; color:#999; margin-top:50px;">Пусто</div>
+        <div v-if="activeTab === 'fav'" style="padding:20px">
+            <h2 style="font-weight: 800">ИЗБРАННОЕ</h2>
+            <div v-if="favs.length === 0" style="text-align:center; margin-top:50px; color:#aaa">Здесь пока пусто</div>
+            <div class="catalog-grid" v-else>
+                <div v-for="p in favs" :key="p.id" class="card" @click="openProduct(p)">
+                    <div class="img-wrap"><img :src="p.safeImg" class="loaded"></div>
+                    <div style="padding:10px"><div style="font-weight:700; font-size:12px">{{p.name}}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="activeTab === 'cart'" style="padding:20px">
+            <h2 style="font-weight: 800">ОФОРМЛЕНИЕ</h2>
+            <div v-if="cart.length === 0" style="text-align:center; margin-top:50px">Ваша корзина пуста</div>
             <div v-else>
-                <div v-for="(item, idx) in cart" :key="idx" style="display:flex; gap:15px; margin-bottom:15px; align-items:center;">
-                    <img :src="item.safeImage" style="width:60px; height:60px; border-radius:10px; object-fit:cover;">
-                    <div style="flex:1; font-weight:700; font-size:13px;">{{item.name}}</div>
-                    <div @click="removeFromCart(idx)" style="color:red;">✕</div>
+                <div v-for="(item, idx) in cart" :key="idx" style="display:flex; gap:12px; margin-bottom:15px; align-items:center">
+                    <img :src="item.safeImg" style="width:60px; height:60px; border-radius:10px; object-fit:cover" @click="openProduct(item)">
+                    <div style="flex:1">
+                        <div style="font-weight:700; font-size:13px">{{item.name}}</div>
+                        <div style="font-size:11px; color:#777">Размер: {{item.selSize}}</div>
+                    </div>
+                    <div @click="removeFromCart(idx); haptic('light')">✕</div>
                 </div>
-                
-                <div class="input-group"><label>Ваше имя</label><input v-model="orderForm.name"></div>
-                <div class="input-group"><label>Телефон</label><input v-model="orderForm.phone" type="tel" placeholder="79000000000"></div>
-                <div id="map"></div>
-                <button class="btn-main" @click="sendOrder">ЗАКАЗАТЬ — {{ cartTotal }} ₽</button>
+                <div style="margin-top:30px">
+                    <input class="input-ui" v-model="form.name" placeholder="Ваше имя">
+                    <input class="input-ui" v-model="form.phone" placeholder="Телефон (например, 9001234567)" type="tel">
+                    <div class="delivery-grid">
+                        <div v-for="d in ['Сдэк', 'Почта', '5post']" :key="d" @click="form.del = d; haptic('light')" class="del-item" :class="{active: form.del === d}">{{d}}</div>
+                    </div>
+                    <div id="map-box"><div id="map" style="width:100%; height:100%"></div></div>
+                    <div style="font-size:12px; font-weight:800; margin-bottom:20px">АДРЕС: {{ form.addr || 'Выберите на карте' }}</div>
+                    <button class="btn-black" @click="sendOrder">ЗАКАЗАТЬ — {{ cartTotal }} ₽</button>
+                </div>
             </div>
         </div>
 
-        <div v-if="activeTab === 'profile'" style="padding: 20px">
-            <div style="text-align:center; margin-bottom:30px">
-                <img :src="user.photo || 'https://via.placeholder.com/100'" style="width:80px; height:80px; border-radius:50%; object-fit:cover;">
-                <h3 style="font-weight:800;">{{ user.first_name }}</h3>
+        <div v-if="activeTab === 'profile'" style="padding:20px">
+            <div style="display:flex; align-items:center; gap:15px; margin-bottom:30px">
+                <img :src="user.photo" style="width:70px; height:70px; border-radius:50%; background:#eee">
+                <div>
+                    <div style="font-weight:800; font-size:18px">{{ user.first_name }}</div>
+                    <div style="font-size:12px; color:blue; font-weight:700" @click="openSupport">Служба поддержки</div>
+                </div>
             </div>
 
-            <div v-if="isAdmin" style="border: 2px dashed #ddd; padding:20px; border-radius:20px;">
-                <h4 style="margin:0 0 20px 0">Админ-панель</h4>
-                <div class="input-group"><label>Название</label><input v-model="newP.name"></div>
-                <div class="input-group"><label>Цена</label><input v-model="newP.price" type="number"></div>
-                <div class="input-group">
-                    <label>Фото (ImgBB)</label>
-                    <input type="file" @change="uploadToImgBB" multiple>
-                    <div style="display:flex; gap:5px; margin-top:10px;">
-                        <img v-for="img in newP.images" :src="img" style="width:40px; height:40px; object-fit:cover; border-radius:5px;">
+            <div v-if="isAdmin" style="border:2px solid #000; padding:15px; border-radius:15px">
+                <h3 style="margin-top:0">АДМИН ПАНЕЛЬ</h3>
+                <input class="input-ui" v-model="newP.name" placeholder="Название">
+                <textarea class="input-ui" v-model="newP.desc" placeholder="Описание" style="height:80px"></textarea>
+                <input class="input-ui" v-model="newP.sizes" placeholder="Размеры (через запятую: 16,17,18)">
+                <input class="input-ui" v-model="newP.price" type="number" placeholder="Цена">
+                <select class="input-ui" v-model="newP.cat">
+                    <option v-for="c in ['Серьги', 'Цепочки', 'Кольца']" :value="c">{{c}}</option>
+                </select>
+                <input type="file" @change="uploadToImgBB" multiple style="margin-bottom:10px">
+                <div style="display:flex; gap:5px; overflow-x:auto; margin-bottom:15px">
+                    <img v-for="img in newP.imgs" :src="img" style="width:50px; height:50px; object-fit:cover; border-radius:5px">
+                </div>
+                <button class="btn-black" @click="saveProduct" :disabled="loading">{{ loading ? 'СОХРАНЕНИЕ...' : 'ДОБАВИТЬ ТОВАР' }}</button>
+
+                <div style="margin-top:30px">
+                    <h4 style="border-bottom:1px solid #000; padding-bottom:5px">Ваши товары</h4>
+                    <div v-for="p in products" :key="p.id" style="display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid #eee; align-items:center">
+                        <span style="font-size:12px; font-weight:600">{{p.name}}</span>
+                        <div @click="toggleVis(p); haptic('light')" :style="{color: p.hidden ? 'red' : 'green'}" style="font-weight:800; font-size:10px">
+                            {{ p.hidden ? 'СКРЫТ' : 'ПОКАЗАН' }}
+                        </div>
                     </div>
                 </div>
-                <button class="btn-main" @click="saveProductToFirebase" :disabled="isUploading">Добавить товар</button>
             </div>
         </div>
     </main>
 
-    <div class="modal" v-if="selectedProduct">
-        <div style="position:absolute; top:20px; right:20px; z-index:10; background:rgba(255,255,255,0.8); width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800" @click="selectedProduct = null">✕</div>
-        <div class="slider-container">
-            <img v-for="img in selectedProduct.images" :src="img">
+    <div class="page-overlay" v-if="selP">
+        <div style="position:fixed; top:20px; right:20px; z-index:1000; background:#fff; width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; box-shadow:0 2px 10px rgba(0,0,0,0.1)" @click="selP = null">✕</div>
+        <div class="slider">
+            <img v-for="img in selP.images" :key="img" :src="img">
         </div>
-        <div style="padding:25px;">
-            <h1 style="font-weight:800; font-size:22px;">{{ selectedProduct.name }}</h1>
-            <div style="font-size:20px; font-weight:800; margin-bottom:15px;">{{ selectedProduct.price }} ₽</div>
-            <p style="color:#666; line-height:1.6;">{{ selectedProduct.description }}</p>
-            <button class="btn-main" @click="addToCart(selectedProduct); vibrate()">В КОРЗИНУ</button>
+        <div style="padding:25px">
+            <h1 style="font-weight:800; margin:0">{{selP.name}}</h1>
+            <div style="font-size:24px; font-weight:800; margin:10px 0">{{selP.price}} ₽</div>
+            <div style="font-weight:700; font-size:12px; margin:20px 0 10px">РАЗМЕР:</div>
+            <div style="display:flex; gap:10px; margin-bottom:30px">
+                <div v-for="sz in selP.sizeList" :key="sz" @click="curSz = sz; haptic('light')" class="size-btn" :class="{active: curSz === sz}">{{sz}}</div>
+            </div>
+            <div style="font-weight:700; font-size:12px; margin-bottom:10px">ОПИСАНИЕ:</div>
+            <p style="font-size:14px; color:#555; line-height:1.7; white-space:pre-line">{{selP.desc}}</p>
+            <button class="btn-black" @click="addToCart(selP); haptic('medium')" style="margin-top:30px">В КОРЗИНУ</button>
         </div>
     </div>
 
-    <nav class="nav-bar">
-        <div class="nav-item" :class="{active: activeTab === 'catalog'}" @click="activeTab = 'catalog'; vibrate()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+    <nav class="tab-bar">
+        <div class="tab-item" :class="{active: activeTab === 'catalog'}" @click="activeTab = 'catalog'; haptic('light')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Каталог
         </div>
-        <div class="nav-item" :class="{active: activeTab === 'cart'}" @click="activeTab = 'cart'; vibrate()" style="position:relative">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+        <div class="tab-item" :class="{active: activeTab === 'fav'}" @click="activeTab = 'fav'; haptic('light')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.84-8.84 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            Избранное
+        </div>
+        <div class="tab-item" :class="{active: activeTab === 'cart'}" @click="activeTab = 'cart'; haptic('light')" style="position:relative">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             Корзина <span v-if="cart.length" class="badge">{{ cart.length }}</span>
         </div>
-        <div class="nav-item" :class="{active: activeTab === 'profile'}" @click="activeTab = 'profile'; vibrate()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <div class="tab-item" :class="{active: activeTab === 'profile'}" @click="activeTab = 'profile'; haptic('light')">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Профиль
         </div>
     </nav>
@@ -220,110 +222,123 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const firebaseConfig = {
+    const fbCfg = {
         apiKey: "AIzaSyC6fihIMtOYZuPh-db3Tc6eiRgSikzydVw",
         authDomain: "auna-jewel.firebaseapp.com",
         projectId: "auna-jewel",
-        storageBucket: "auna-jewel.appspot.com",
+        storageBucket: "auna-jewel.appspot.com"
     };
 
-    const app = initializeApp(firebaseConfig);
+    const app = initializeApp(fbCfg);
     const db = getFirestore(app);
     const tg = window.Telegram.WebApp;
 
     Vue.createApp({
         data() {
             return {
-                activeTab: 'catalog',
-                menuOpen: false,
-                selectedSection: null,
-                currentCategory: 'Все',
-                selectedProduct: null,
-                isAdmin: false,
-                adminId: 387881523,
-                user: { first_name: 'Гость', photo: null },
-                products: [],
+                activeTab: 'catalog', menuOpen: false, burgerSub: null,
+                curCat: 'Все', products: [
+                    { id: 1, category: 'комлекты', name: 'Пиджак с бантом черный', price: 2900, images: ['1.jpg'], sizes: ['42','44'], selS: '42', aIdx: 0, desc: 'Пиджак с бантом.' },
+                    { id: 2, category: 'серьги', name: 'Пиджак с бантом бордовый', price: 2900, images: ['2.jpg'], sizes: ['42','44'], selS: '42', aIdx: 0, desc: 'Пиджак с бантом.' }
+                ], selP: null, curSz: null, loading: false,
+                favs: JSON.parse(localStorage.getItem('auna_fav') || '[]'),
                 cart: JSON.parse(localStorage.getItem('auna_cart') || '[]'),
-                isUploading: false,
-                newP: { name: '', description: '', price: '', category: 'Серьги', sizes: '', images: [], hidden: false },
-                orderForm: { name: '', phone: '', delivery: 'Сдэк' },
-                infoData: {
-                    about: { title: "AUNA jewel", text: "Это ювелирная эстетика в каждой детали. Мы создаем украшения из натуральных камней, которые подчеркивают вашу уникальность." },
-                    delivery_info: { title: "Доставка", text: "• СДЭК (ПВЗ или курьер)\n• Почта России\n• 5Post (в Пятерочке)\nСрок отправки: 1-2 дня." },
-                    return: { title: "Возврат", text: "Возможен в течение 14 дней при условии сохранения товарного вида и бирок." }
-                }
+                user: { first_name: 'Гость', photo: '', id: 0 },
+                isAdmin: false, adminId: 387881523,
+                form: { name: '', phone: '', del: 'Сдэк', addr: '' },
+                newP: { name: '', desc: '', price: '', cat: 'Серьги', sizes: '', imgs: [] },
+                info: {
+                    about: { title: 'О БРЕНДЕ', text: 'AUNA jewel — это философия минимализма и природной красоты. Мы создаем украшения из натуральных камней для тех, кто ценит эстетику.' },
+                    delivery: { title: 'ДОСТАВКА', text: 'Мы доставляем по всей России через СДЭК, Почту и 5post. Сборка заказа занимает 1-2 рабочих дня.' },
+                    return: { title: 'ВОЗВРАТ', text: 'Вернуть украшение можно в течение 14 дней, если оно сохранило товарный вид и все бирки.' }
+                },
+                map: null
             }
         },
         computed: {
             filteredProducts() {
-                let list = this.products;
-                if (!this.isAdmin) list = list.filter(p => !p.hidden);
-                if (this.currentCategory !== 'Все') list = list.filter(p => p.category === this.currentCategory);
-                return list;
+                let p = this.products;
+                if (!this.isAdmin) p = p.filter(x => !x.hidden);
+                return this.curCat === 'Все' ? p : p.filter(x => x.cat === this.curCat);
             },
-            cartTotal() { return this.cart.reduce((s, i) => s + Number(i.price), 0); }
+            cartTotal() { return this.cart.reduce((a, b) => a + Number(b.price), 0); }
         },
         methods: {
-            vibrate() { tg.HapticFeedback.impactOccurred('medium'); },
-            contactSupport() { tg.openTelegramLink('https://t.me/opttania'); },
-            selectProduct(p) { this.selectedProduct = p; },
+            haptic(s) { if(s==='light') tg.HapticFeedback.impactOccurred('light'); else tg.HapticFeedback.impactOccurred('medium'); },
+            isFav(p) { return this.favs.some(x => x.id === p.id); },
+            toggleFav(p) {
+                if(this.isFav(p)) this.favs = this.favs.filter(x => x.id !== p.id);
+                else this.favs.push({...p});
+                localStorage.setItem('auna_fav', JSON.stringify(this.favs));
+            },
+            openProduct(p) { this.selP = p; this.curSz = p.sizeList[0]; },
             addToCart(p) {
-                this.cart.push({...p});
+                this.cart.push({...p, selSize: this.curSz});
                 localStorage.setItem('auna_cart', JSON.stringify(this.cart));
-                tg.showAlert("Добавлено!");
-                this.selectedProduct = null;
+                tg.showAlert("Добавлено в корзину!");
+                this.selP = null;
             },
             removeFromCart(idx) {
                 this.cart.splice(idx, 1);
                 localStorage.setItem('auna_cart', JSON.stringify(this.cart));
             },
+            openSupport() { tg.openTelegramLink('https://t.me/opttania'); },
             async uploadToImgBB(e) {
-                const files = e.target.files;
-                this.isUploading = true;
-                for (let f of files) {
-                    const fd = new FormData(); fd.append("image", f);
-                    const r = await fetch("https://api.imgbb.com/1/upload?key=839e62907e9a52f0159461b7771bcb2f", {method:"POST", body:fd});
-                    const d = await r.json(); this.newP.images.push(d.data.url);
+                this.loading = true;
+                for(let f of e.target.files) {
+                    let fd = new FormData(); fd.append("image", f);
+                    let r = await fetch("https://api.imgbb.com/1/upload?key=839e62907e9a52f0159461b7771bcb2f", {method:"POST", body:fd});
+                    let d = await r.json(); this.newP.imgs.push(d.data.url);
                 }
-                this.isUploading = false;
+                this.loading = false;
             },
-            async saveProductToFirebase() {
-                const data = {...this.newP, createdAt: Date.now()};
-                await addDoc(collection(db, "products"), data);
-                tg.showAlert("Готово!");
-                this.newP = { name: '', description: '', price: '', category: 'Серьги', sizes: '', images: [], hidden: false };
+            async saveProduct() {
+                await addDoc(collection(db, "products"), {...this.newP, createdAt: Date.now(), hidden: false, images: this.newP.imgs});
+                tg.showAlert("Товар добавлен!");
+                this.newP = { name: '', desc: '', price: '', cat: 'Серьги', sizes: '', imgs: [] };
             },
+            async toggleVis(p) { await updateDoc(doc(db, "products", p.id), { hidden: !p.hidden }); },
             initMap() {
+                if(this.map) return;
                 setTimeout(() => {
-                    new mapgl.Map('map', { center: [37.61, 55.75], zoom: 12, key: 'cab82c94-e619-42eb-9814-3361712feaf0' });
+                    this.map = new mapgl.Map('map', { center: [37.61, 55.75], zoom: 12, key: 'cab82c94-e619-42eb-9814-3361712feaf0' });
+                    this.map.on('click', e => {
+                        fetch(`https://catalog.api.2gis.com/3.0/items/geocode?lon=${e.lngLat[0]}&lat=${e.lngLat[1]}&fields=items.address&key=cab82c94-e619-42eb-9814-3361712feaf0`)
+                        .then(r => r.json()).then(res => {
+                            if(res.result?.items[0]) this.form.addr = res.result.items[0].full_name;
+                        });
+                    });
                 }, 500);
             },
             sendOrder() {
-                const text = `💎 НОВЫЙ ЗАКАЗ\n👤 ${this.orderForm.name}\n📞 ${this.orderForm.phone}\n💰 Итого: ${this.cartTotal}₽`;
-                tg.sendData(text);
+                const phone = this.form.phone.replace(/\D/g, '');
+                if(phone.length < 10 || phone.length > 11) return tg.showAlert("Номер телефона должен быть 10-11 цифр!");
+                const items = this.cart.map(i => `${i.name} (${i.selSize})`).join(', ');
+                const txt = `💎 НОВЫЙ ЗАКАЗ AUNA\n\n👤 Имя: ${this.form.name}\n📞 Тел: ${this.form.phone}\n🚚 Доставка: ${this.form.del}\n📍 Адрес: ${this.form.addr}\n📦 Товары: ${items}\n💰 Сумма: ${this.cartTotal}₽`;
+                tg.sendData(txt);
+                this.cart = [];
+                localStorage.removeItem('auna_cart');
                 tg.showAlert("Заказ отправлен!");
             }
         },
         watch: {
-            activeTab(v) { if (v === 'cart') this.initMap(); }
+            activeTab(v) { if(v === 'cart') this.initMap(); }
         },
         mounted() {
             tg.ready(); tg.expand();
-            if (tg.initDataUnsafe?.user) {
+            if(tg.initDataUnsafe?.user) {
                 const u = tg.initDataUnsafe.user;
                 this.user = { first_name: u.first_name, photo: u.photo_url, id: u.id };
-                this.orderForm.name = u.first_name;
-                if (Number(u.id) === Number(this.adminId)) this.isAdmin = true;
+                this.form.name = u.first_name;
+                if(u.id == this.adminId) this.isAdmin = true;
             }
-
-            onSnapshot(query(collection(db, "products"), orderBy("createdAt", "desc")), (snap) => {
-                this.products = snap.docs.map(doc => {
-                    const d = doc.data();
-                    return {
-                        id: doc.id,
-                        ...d,
-                        safeImage: d.images?.length ? d.images[0] : (d.img || ''),
-                        loaded: false
+            onSnapshot(query(collection(db, "products"), orderBy("createdAt", "desc")), snap => {
+                this.products = snap.docs.map(d => {
+                    const data = d.data();
+                    return { id: d.id, ...data, 
+                        safeImg: data.images?.[0] || '', 
+                        sizeList: data.sizes ? data.sizes.split(',').map(s => s.trim()) : [],
+                        loaded: false 
                     }
                 });
             });
