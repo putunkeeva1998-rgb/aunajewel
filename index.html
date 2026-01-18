@@ -4,303 +4,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AUNA jewel</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://maps.api.2gis.ru/2.0/loader.js?pkg=full"></script>
+    <script src="https://mapgl.2gis.com/api/js/v1"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --accent: #222;
-            --secondary: #f4f4f4;
-            --text: #333;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; background: #fff; color: var(--text); user-select: none; }
+        :root { --accent: #2c2c2c; --bg: #ffffff; --gray: #f4f4f4; }
+        body { margin: 0; font-family: 'Montserrat', sans-serif; background: var(--bg); color: var(--accent); overflow-x: hidden; }
         
-        /* Шапка */
-        header { position: sticky; top: 0; background: #fff; z-index: 100; padding: 15px; text-align: center; border-bottom: 1px solid #eee; font-weight: bold; letter-spacing: 2px; }
-        .burger-icon { position: absolute; left: 15px; font-size: 20px; cursor: pointer; }
-
-        /* Категории */
-        .categories { display: flex; gap: 10px; padding: 10px; overflow-x: auto; white-space: nowrap; }
-        .cat-btn { background: var(--secondary); border: none; padding: 8px 15px; border-radius: 20px; font-size: 13px; }
-
-        /* Сетка товаров */
-        .catalog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; padding-bottom: 80px; }
-        .product-card { background: #fff; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid #f9f9f9; }
-        .product-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; }
-        .product-info { padding: 10px; font-size: 14px; }
-        .price { font-weight: bold; margin-top: 5px; }
-        .fav-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; }
-
-        /* Бургер меню */
-        #menu-overlay { position: fixed; top: 0; left: -100%; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; transition: 0.3s; }
-        #menu-content { width: 70%; height: 100%; background: #fff; padding: 20px; position: relative; }
-        .menu-item { padding: 15px 0; border-bottom: 1px solid #eee; font-size: 16px; }
-
-        /* Навигация */
-        nav { position: fixed; bottom: 0; width: 100%; background: #fff; display: flex; border-top: 1px solid #eee; padding-bottom: env(safe-area-inset-bottom); z-index: 100; }
-        .nav-btn { flex: 1; text-align: center; padding: 12px; font-size: 11px; color: #888; text-decoration: none; cursor: pointer; }
-        .nav-btn.active { color: var(--accent); font-weight: bold; }
-
-        /* Карточка товара (Full) */
-        #product-detail { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #fff; z-index: 300; display: none; overflow-y: auto; }
+        /* Сетка 2 ряда */
+        .products-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; padding-bottom: 100px; }
+        .card { background: var(--gray); border-radius: 18px; overflow: hidden; position: relative; transition: transform 0.2s; }
+        .card:active { transform: scale(0.98); }
+        .card img { width: 100%; height: 190px; object-fit: cover; }
         
-        /* Карта */
-        #map { width: 100%; height: 250px; border-radius: 12px; margin: 15px 0; }
+        /* Прозрачное сердце */
+        .fav-icon { position: absolute; top: 10px; right: 10px; z-index: 10; font-size: 24px; color: rgba(255,255,255,0.8); cursor: pointer; }
+        .fav-icon.active { color: #ff4444; }
 
-        .hidden { display: none; }
-        .admin-section { padding: 20px; background: #f9f9f9; border-radius: 10px; margin: 10px; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; }
-        .btn-black { background: #000; color: #fff; padding: 15px; width: 100%; border: none; border-radius: 8px; margin-top: 10px; font-weight: bold;}
+        /* Навигация (Иконки) */
+        .tab-bar { position: fixed; bottom: 0; width: 100%; height: 70px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #aaa; }
+        .tab-item.active { color: var(--accent); font-weight: 600; }
+        .tab-item svg { width: 24px; height: 24px; margin-bottom: 4px; }
+
+        /* Кнопки размеров */
+        .size-container { display: flex; gap: 8px; margin: 15px 0; overflow-x: auto; }
+        .size-btn { padding: 10px 18px; border: 1.5px solid #ddd; border-radius: 12px; background: white; font-weight: 600; }
+        .size-btn.active { border-color: var(--accent); background: var(--accent); color: white; }
+
+        .btn-main { background: var(--accent); color: white; border: none; padding: 16px; width: 100%; border-radius: 14px; font-weight: 600; margin-top: 10px; }
+        #map { width: 100%; height: 220px; border-radius: 15px; margin: 15px 0; }
+        
+        /* Бургер */
+        .burger-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; padding: 40px 20px; }
     </style>
 </head>
 <body>
+<div id="app">
+    <header style="padding: 15px; text-align: center; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 100;">
+        <div @click="ui.burger = true; vibro()" style="position: absolute; left: 15px; font-size: 20px;">☰</div>
+        <h1 style="margin: 0; font-size: 16px; letter-spacing: 2px;">AUNA jewel</h1>
+    </header>
 
-<header>
-    <div class="burger-icon" onclick="toggleMenu(true)">☰</div>
-    AUNA jewel
-</header>
-
-<div id="menu-overlay" onclick="toggleMenu(false)">
-    <div id="menu-content" onclick="event.stopPropagation()">
-        <span style="float:right" onclick="toggleMenu(false)">✕</span>
-        <h2 style="margin-top:0">AUNA</h2>
-        <div class="menu-item" onclick="alert('AUNA jewel — украшения с душой')">О нас</div>
-        <div class="menu-item" onclick="alert('Возврат в течение 14 дней при сохранении пломб')">Возврат</div>
-        <div class="menu-item" onclick="alert('СДЭК, Почта, 5post по всей РФ')">Доставка</div>
+    <div v-if="ui.burger" class="burger-menu">
+        <div @click="ui.burger = false" style="text-align: right; font-size: 24px;">✕</div>
+        <div @click="showInfo('О нас', 'AUNA jewel - это стиль и качество.')" style="padding: 20px 0; border-bottom: 1px solid #eee;">О НАС</div>
+        <div @click="showInfo('Возврат', 'Срок возврата - 14 дней.')" style="padding: 20px 0; border-bottom: 1px solid #eee;">ВОЗВРАТ</div>
+        <div @click="showInfo('Доставка', 'Мы доставляем по всему миру.')" style="padding: 20px 0;">ДОСТАВКА</div>
     </div>
-</div>
 
-<main id="view-catalog" class="view">
-    <div class="categories">
-        <button class="cat-btn" onclick="renderCatalog('all')">Все</button>
-        <button class="cat-btn" onclick="renderCatalog('серьги')">Серьги</button>
-        <button class="cat-btn" onclick="renderCatalog('цепочки')">Цепочки</button>
-    </div>
-    <div class="catalog-grid" id="catalog-list"></div>
-</main>
-
-<main id="view-fav" class="view hidden" style="padding: 15px;">
-    <h3>Избранное</h3>
-    <div class="catalog-grid" id="fav-list"></div>
-</main>
-
-<main id="view-cart" class="view hidden" style="padding: 15px;">
-    <h3>Корзина</h3>
-    <div id="cart-content"></div>
-    <div id="checkout-form" class="hidden">
-        <input type="text" id="cust-name" placeholder="Имя">
-        <input type="text" id="cust-phone" placeholder="Телефон">
-        <p>Способ доставки:</p>
-        <div style="display:flex; gap:5px;">
-            <button class="cat-btn" onclick="setDelivery('СДЭК')">СДЭК</button>
-            <button class="cat-btn" onclick="setDelivery('Почта')">Почта</button>
-            <button class="cat-btn" onclick="setDelivery('5post')">5post</button>
+    <div v-if="activeTab === 'catalog'">
+        <div style="display: flex; gap: 10px; padding: 10px; overflow-x: auto;">
+            <div v-for="cat in ['Серьги', 'Цепочки', 'Кольца']" @click="category = cat; vibro()" :class="['size-btn', category === cat ? 'active' : '']" style="padding: 6px 15px; font-size: 12px;">{{cat}}</div>
         </div>
-        <div id="map"></div>
-        <button class="btn-black" onclick="sendOrder()">Оформить заказ</button>
+        <div class="products-grid">
+            <div v-for="p in filteredProducts" :key="p.id" class="card" @click="openP(p)" v-if="!p.hidden">
+                <div class="fav-icon" :class="{active: isFav(p)}" @click.stop="toggleFav(p)">♥</div>
+                <img :src="p.images[0]">
+                <div style="padding: 10px; font-size: 13px;">
+                    <div>{{p.name}}</div>
+                    <div style="font-weight: 700; margin-top: 4px;">{{p.price}} ₽</div>
+                </div>
+            </div>
+        </div>
     </div>
-</main>
 
-<main id="view-profile" class="view hidden" style="padding: 15px;">
-    <h3 id="prof-name">Загрузка...</h3>
-    <button class="btn-black" onclick="window.open('https://t.me/opttania')">Поддержка (Telegram)</button>
-    <div class="admin-section" id="admin-panel">
-        <h4>Админ-панель</h4>
-        <input type="text" id="adm-title" placeholder="Название">
-        <textarea id="adm-desc" placeholder="Описание"></textarea>
-        <input type="text" id="adm-price" placeholder="Цена">
-        <input type="text" id="adm-sizes" placeholder="Размеры (через запятую)">
-        <select id="adm-cat">
-            <option value="серьги">Серьги</option>
-            <option value="цепочки">Цепочки</option>
-        </select>
-        <input type="file" id="adm-img" accept="image/*">
-        <button class="btn-black" style="background: #28a745;" onclick="adminAddProduct()">Добавить товар</button>
+    <div v-if="activeTab === 'cart'" style="padding: 15px;">
+        <div v-if="cart.length > 0">
+            <div v-for="item in cart" style="display:flex; gap:10px; margin-bottom:10px;">
+                <img :src="item.images[0]" style="width:50px; height:50px; border-radius:8px;">
+                <div>{{item.name}} ({{item.selectedSize}}) - {{item.price}}₽</div>
+            </div>
+            <input v-model="form.name" placeholder="Имя" class="btn-main" style="background:#f9f9f9; color:black; text-align:left;">
+            <input v-model="form.phone" placeholder="Телефон (10-11 цифр)" class="btn-main" style="background:#f9f9f9; color:black; text-align:left;">
+            <p>Доставка:</p>
+            <div style="display:flex; gap:5px;">
+                <button v-for="d in ['Сдэк','Почта','5post']" @click="form.delivery = d; vibro()" :class="['size-btn', form.delivery === d ? 'active' : '']">{{d}}</button>
+            </div>
+            <div id="map"></div>
+            <button class="btn-main" @click="checkout">Оформить заказ</button>
+        </div>
+        <div v-else style="text-align:center; padding-top:50px;">Корзина пуста</div>
     </div>
-</main>
 
-<nav>
-    <div class="nav-btn active" onclick="switchTab('catalog', this)">Каталог</div>
-    <div class="nav-btn" onclick="switchTab('fav', this)">Избранное</div>
-    <div class="nav-btn" onclick="switchTab('cart', this)">Корзина</div>
-    <div class="nav-btn" onclick="switchTab('profile', this)">Профиль</div>
-</nav>
-
-<div id="product-detail">
-    <div style="padding: 20px;">
-        <span onclick="closeDetail()" style="font-size: 25px; cursor: pointer;">✕</span>
-        <div id="detail-content"></div>
+    <div v-if="activeTab === 'profile'" style="padding: 20px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <img :src="user.photo || 'https://via.placeholder.com/80'" style="width:80px; border-radius:50%;">
+            <h3>{{user.first_name}}</h3>
+        </div>
+        <button class="btn-main" @click="tgSupport">Поддержка (opttania)</button>
+        
+        <div v-if="isAdmin" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+            <h3>Админ-панель</h3>
+            <input v-model="newItem.name" placeholder="Название" class="btn-main" style="background:#f4f4f4; color:black; text-align:left;">
+            <input v-model="newItem.price" placeholder="Цена" class="btn-main" style="background:#f4f4f4; color:black; text-align:left;">
+            <input type="file" @change="uploadPhoto" style="margin-top:10px;">
+            <button class="btn-main" @click="saveProduct">Добавить товар</button>
+        </div>
     </div>
+
+    <div v-if="viewP" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:3000; overflow-y:auto;">
+        <div @click="viewP = null" style="padding:20px; font-size:24px;">✕</div>
+        <div style="display:flex; overflow-x:auto; height:350px;">
+            <img v-for="img in viewP.images" :src="img" style="min-width:100%; object-fit:cover;">
+        </div>
+        <div style="padding:20px;">
+            <h2>{{viewP.name}}</h2>
+            <p>{{viewP.description}}</p>
+            <div class="size-container">
+                <button v-for="s in viewP.sizes" @click="selS = s; vibro()" :class="['size-btn', selS === s ? 'active' : '']">{{s}}</button>
+            </div>
+            <button class="btn-main" @click="addToCart(viewP)">Добавить в корзину</button>
+        </div>
+    </div>
+
+    <nav class="tab-bar">
+        <div v-for="t in nav" @click="activeTab = t.id; vibro(); if(t.id === 'cart') initMap()" :class="['tab-item', activeTab === t.id ? 'active' : '']">
+            <svg viewBox="0 0 24 24" fill="currentColor" v-html="t.icon"></svg>
+            <span>{{t.title}}</span>
+        </div>
+    </nav>
 </div>
 
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    // Тестовые данные (при подключении Firebase заменить на fetch)
-    let products = [
-        { id: 1, title: 'Серьги Auna', price: '2400', cat: 'серьги', img: '1.jpg', desc: 'Серебро 925 пробы, ручная работа.', sizes: ['S', 'M'] },
-        { id: 2, title: 'Цепь Aura', price: '4500', cat: 'цепочки', img: '2.jpg', desc: 'Минималистичная цепочка.', sizes: ['40см', '45см'] }
-    ];
-
-    let cart = JSON.parse(localStorage.getItem('auna_cart')) || [];
-    let favs = JSON.parse(localStorage.getItem('auna_favs')) || [];
-
-    // Инициализация
-    function init() {
-        renderCatalog('all');
-        if (tg.initDataUnsafe.user) {
-            document.getElementById('prof-name').innerText = tg.initDataUnsafe.user.first_name;
-            document.getElementById('cust-name').value = tg.initDataUnsafe.user.first_name;
+const tg = window.Telegram.WebApp;
+Vue.createApp({
+    data() {
+        return {
+            activeTab: 'catalog',
+            category: 'Серьги',
+            viewP: null, selS: null,
+            isAdmin: true, adminId: 'ВАШ_ID',
+            user: { first_name: 'Гость', photo: '' },
+            ui: { burger: false },
+            newItem: { name: '', price: '', images: [], sizes: ['42','44','46'] },
+            cart: JSON.parse(localStorage.getItem('auna_cart') || '[]'),
+            favs: JSON.parse(localStorage.getItem('auna_favs') || '[]'),
+            form: { name: '', phone: '', delivery: 'Сдэк' },
+            products: [
+                { id: 1, name: 'Серьги Луна', price: 2500, category: 'Серьги', images: ['1.jpg'], sizes: ['16','17','18'], description: 'Сияющие серьги ручной работы.' }
+            ],
+            nav: [
+                { id: 'catalog', title: 'Каталог', icon: '<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>' },
+                { id: 'fav', title: 'Избранное', icon: '<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>' },
+                { id: 'cart', title: 'Корзина', icon: '<path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>' },
+                { id: 'profile', title: 'Профиль', icon: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08c-1.29 1.94-3.5 3.22-6 3.22z"/>' }
+            ]
         }
-        initMap();
-    }
-
-    // Вибрация
-    function vibe() { tg.HapticFeedback.impactOccurred('light'); }
-
-    // Переключение вкладок
-    function switchTab(tab, el) {
-        vibe();
-        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-        document.getElementById('view-' + tab).classList.remove('hidden');
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-        if(tab === 'cart') renderCart();
-        if(tab === 'fav') renderFav();
-    }
-
-    function toggleMenu(show) {
-        vibe();
-        document.getElementById('menu-overlay').style.left = show ? '0' : '-100%';
-    }
-
-    // Рендер каталога
-    function renderCatalog(filter) {
-        const list = document.getElementById('catalog-list');
-        list.innerHTML = '';
-        products.filter(p => filter === 'all' || p.cat === filter).forEach(p => {
-            list.innerHTML += `
-                <div class="product-card" onclick="openDetail(${p.id})">
-                    <div class="fav-badge" onclick="event.stopPropagation(); toggleFav(${p.id})">${favs.includes(p.id) ? '❤️' : '🤍'}</div>
-                    <img src="${p.img}">
-                    <div class="product-info">
-                        <div>${p.title}</div>
-                        <div class="price">${p.price} ₽</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
-
-    // Деталка
-    function openDetail(id) {
-        vibe();
-        const p = products.find(i => i.id === id);
-        const detail = document.getElementById('product-detail');
-        document.getElementById('detail-content').innerHTML = `
-            <img src="${p.img}" style="width:100%; border-radius:15px;">
-            <h2>${p.title}</h2>
-            <p>${p.desc}</p>
-            <p>Цена: <b>${p.price} ₽</b></p>
-            <select id="size-select">${p.sizes.map(s => `<option>${s}</option>`).join('')}</select>
-            <button class="btn-black" onclick="addToCart(${p.id})">Добавить в корзину</button>
-        `;
-        detail.style.display = 'block';
-    }
-
-    function closeDetail() { document.getElementById('product-detail').style.display = 'none'; }
-
-    // Корзина
-    function addToCart(id) {
-        vibe();
-        const size = document.getElementById('size-select').value;
-        cart.push({...products.find(p => p.id === id), selectedSize: size});
-        localStorage.setItem('auna_cart', JSON.stringify(cart));
-        alert('Добавлено в корзину');
-        closeDetail();
-    }
-
-    function renderCart() {
-        const cont = document.getElementById('cart-content');
-        if(cart.length === 0) {
-            cont.innerHTML = 'Корзина пуста';
-            document.getElementById('checkout-form').classList.add('hidden');
-            return;
+    },
+    computed: {
+        filteredProducts() { return this.products.filter(p => p.category === this.category); }
+    },
+    methods: {
+        vibro() { tg.HapticFeedback.impactOccurred('medium'); },
+        openP(p) { this.vibro(); this.viewP = p; this.selS = p.sizes[0]; },
+        isFav(p) { return this.favs.some(f => f.id === p.id); },
+        toggleFav(p) {
+            this.vibro();
+            const idx = this.favs.findIndex(f => f.id === p.id);
+            if (idx > -1) this.favs.splice(idx, 1);
+            else this.favs.push(p);
+            localStorage.setItem('auna_favs', JSON.stringify(this.favs));
+        },
+        addToCart(p) {
+            this.cart.push({ ...p, selectedSize: this.selS });
+            localStorage.setItem('auna_cart', JSON.stringify(this.cart));
+            this.viewP = null;
+            tg.showAlert('Добавлено в корзину!');
+        },
+        async uploadPhoto(e) { /* Тот код, что я дал выше */ },
+        checkout() {
+            const phone = this.form.phone.replace(/\D/g, '');
+            if (phone.length < 10 || phone.length > 11) {
+                tg.showAlert('Номер телефона должен содержать 10-11 цифр!');
+                return;
+            }
+            tg.sendData(`Заказ от ${this.form.name}, Тел: ${this.form.phone}`);
+            this.cart = [];
+            localStorage.removeItem('auna_cart');
+        },
+        initMap() {
+            setTimeout(() => {
+                const map = new mapgl.Map('map', { center: [37.6176, 55.7558], zoom: 12, key: 'cab82c94-e619-42eb-9814-3361712feaf0' });
+            }, 500);
         }
-        document.getElementById('checkout-form').classList.remove('hidden');
-        cont.innerHTML = cart.map((item, idx) => `
-            <div style="display:flex; gap:10px; margin-bottom:10px; border-bottom:1px solid #eee; padding-bottom:10px;">
-                <img src="${item.img}" width="50">
-                <div>${item.title} (${item.selectedSize})<br><b>${item.price} ₽</b></div>
-                <button onclick="removeFromCart(${idx})" style="margin-left:auto; border:none; background:none;">✕</button>
-            </div>
-        `).join('');
+    },
+    mounted() {
+        tg.ready(); tg.expand();
+        if (tg.initDataUnsafe?.user) {
+            this.user = { first_name: tg.initDataUnsafe.user.first_name, photo: tg.initDataUnsafe.user.photo_url };
+            this.form.name = tg.initDataUnsafe.user.first_name;
+        }
     }
-
-    function removeFromCart(idx) {
-        cart.splice(idx, 1);
-        localStorage.setItem('auna_cart', JSON.stringify(cart));
-        renderCart();
-    }
-
-    // Работа с картой 2GIS
-    let map;
-    function initMap() {
-        DG.then(function () {
-            map = DG.map('map', {
-                center: [55.7558, 37.6173],
-                zoom: 13
-            });
-            map.locate({setView: true}); // Авто-определение местоположения
-        });
-    }
-
-    // Админка: загрузка фото на ImgBB
-    async function adminAddProduct() {
-        const file = document.getElementById('adm-img').files[0];
-        if(!file) return alert('Выберите фото');
-        
-        const apiKey = '839e62907e9a52f0159461b7771bcb2f';
-        let formData = new FormData();
-        formData.append("image", file);
-
-        try {
-            const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: "POST", body: formData });
-            const data = await res.json();
-            const newProd = {
-                id: Date.now(),
-                title: document.getElementById('adm-title').value,
-                price: document.getElementById('adm-price').value,
-                cat: document.getElementById('adm-cat').value,
-                img: data.data.url,
-                desc: document.getElementById('adm-desc').value,
-                sizes: document.getElementById('adm-sizes').value.split(',')
-            };
-            products.push(newProd);
-            renderCatalog('all');
-            alert('Товар добавлен!');
-        } catch (e) { alert('Ошибка загрузки'); }
-    }
-
-    // Отправка заказа в Telegram
-    function sendOrder() {
-        const name = document.getElementById('cust-name').value;
-        const phone = document.getElementById('cust-phone').value;
-        const orderData = {
-            orderId: Date.now(),
-            customer: name,
-            phone: phone,
-            items: cart
-        };
-        tg.sendData(JSON.stringify(orderData));
-        cart = [];
-        localStorage.removeItem('auna_cart');
-        alert('Заказ отправлен!');
-        tg.close();
-    }
-
-    window.onload = init;
+}).mount('#app');
 </script>
-
 </body>
 </html>
