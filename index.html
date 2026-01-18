@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -489,8 +490,11 @@
                 activeS: null,
                 isAdmin: false,
                 adminId: 387881523,
-                user: { first_name: 'Гость', photo: null },
-                products: [],
+                user: { first_name: 'Покупатель', photo: null },
+                products: [
+                    { id: 1, category: 'комлекты', name: 'Пиджак с бантом черный', price: 2900, images: ['1.jpg'], sizes: ['42','44'], selS: '42', aIdx: 0, desc: 'Пиджак с бантом.' },
+                    { id: 2, category: 'серьги', name: 'Пиджак с бантом бордовый', price: 2900, images: ['2.jpg'], sizes: ['42','44'], selS: '42', aIdx: 0, desc: 'Пиджак с бантом.' }
+                ],
                 favorites: JSON.parse(localStorage.getItem('auna_favs') || '[]'),
                 cart: JSON.parse(localStorage.getItem('auna_cart') || '[]'),
                 uploading: false,
